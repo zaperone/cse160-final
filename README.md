@@ -1,4 +1,6 @@
-Link for Trello:
+### CSE 160 Final Project
+
+**Link for Trello:**
 
 [https://trello.com/b/5ZPhJJkg/gp](https://trello.com/b/5ZPhJJkg/gp)
 
