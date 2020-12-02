@@ -8,6 +8,7 @@ Run this block if you need to install these required packages.
 install.packages("janitor")
 install.packages("dplyr")
 install.packages("sqldf")
+install.packages("maps")
 install.packages("lubridate",type="binary")
 ```
 
@@ -180,49 +181,103 @@ wordcloud(words = d$word, freq = d$freq, min.freq = 10,
 
 # Showing job listings by location
 ```{r}
-
-
 location_counts <- clean_df %>% count(Location) #using dplyr count to count how many jobs in each location
 location_counts 
 
 split_counts <- location_counts %>% separate(Location, c("City", "State"), extra = "drop", fill = "right", sep = ",")
 split_counts # separated into city and state
 
+# prepare for adding in lat & lng
 split_counts <- (split_counts %>% add_column(lat = 0.0, .after = 3))
 split_counts <- (split_counts %>% add_column(lng = 0.0, .after = 4))
 split_counts
-
-#known errors: City of Industry, CA; DC Ranch, AZ; Far Rockaway, NY
 ```
 
 ```{r}
-#data courtesy of https://simplemaps.com/data/us-cities
+#data for lat/lng courtesy of https://simplemaps.com/data/us-cities
 us_cities_data <- read.csv("uscities.csv")
 head(us_cities_data)
 ```
 
+
 ```{r}
-f <- function(x, output) {
-  city <- x[1]
-  state <- x[2]
+# add in lat + lng to split_counts for plotting by referencing the uscities dataset
+for(i in 1:nrow(split_counts)){
+  city <- split_counts$City[i]
+  state <- split_counts$State[i]
   state <- sub('.', '', state)
-  print(x)
   selection <- fn$sqldf("SELECT * FROM us_cities_data WHERE us_cities_data.city='$city' AND us_cities_data.state_id='$state' ")
-  
+  print(dim(selection)[1])
   if(dim(selection)[1] != 0) {
-    #print("success!")
-    print(selection$lat)#x[4] <- selection$lat
-    #x[5] <- selection$lng
+    latt <- selection$lat
+    lngg <- selection$lng
+    split_counts$lat[i] <- latt
+    split_counts$lng[i] <- lngg
   }
   else {
-    sprintf("INVALID CITY ERROR, CITY NAME: %s, %s", city, state)
+    print("INVALID CITY ERROR, CITY NAME: ")
+    print(city)
+    print(state)
   } #33 errors - look these up manually, or ignore
 }
-
-
-apply(split_counts, 1, f)
-split_counts
 ```
+
+# Clean the split_counts
+```{r}
+clean_counts <- subset(split_counts, lat != 0.0000) # remove cities that could not be found
+clean_counts
+
+cleaner_counts <-subset(clean_counts, lat == 0.0000)
+cleaner_counts # note: not actually cleaner, just needed for the stat density plot on the map
+
+for(i in 1:nrow(clean_counts)){
+  for(j in 1:clean_counts$n[i]){
+    cleaner_counts <- rbind(cleaner_counts, clean_counts[i,])
+  }
+}
+```
+
+
+```{r}
+library(ggplot2);library(maps);
+#states <- map_data("state")
+
+# function to plot a heatmap - needs cleaner_counts since the stats it does are based on # of occurrences of an element, like wordcloud
+gradient_plot <- function(df)
+{
+  states <- map_data("state")
+  ggplot(data = df, aes(x = lng, y = lat)) + geom_polygon(data = states, aes(x = long, y = lat, group = group), color = "black", fill = "white") +
+  stat_density2d(aes(fill = ..level.., alpha = ..level..), geom = "polygon") +
+  scale_fill_gradientn(colors = rev(brewer.pal(7, "Spectral"))) +
+  scale_x_discrete()+ scale_y_discrete()+
+  theme(legend.position = "none") + theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  ggtitle("Job Location Heatmap")
+
+}
+```
+
+```{r}
+# simple point plot based on frequency
+point_plot <- function(df)
+{
+  states <- map_data("state")
+  ggplot(data = df, aes(x = lng, y = lat)) + geom_polygon(data = states, aes(x = long, y = lat, group = group), color = "black", fill = "white") +
+  geom_point(data=df, aes(x=lng, y=lat, color = n, size = n), alpha = 0.5) +
+  scale_color_gradient(low = "red", high = "green") +
+  scale_x_discrete()+ scale_y_discrete()+ theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  ggtitle("Job Location Point Plot")
+
+}
+```
+
+# Generate the maps
+```{r}
+gradient_plot(cleaner_counts)
+point_plot(clean_counts)
+
+```
+
+
 
 
 
