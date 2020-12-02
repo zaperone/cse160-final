@@ -6,6 +6,8 @@ output: html_notebook
 Run this block if you need to install these required packages.
 ```{r}
 install.packages("janitor")
+install.packages("dplyr")
+install.packages("sqldf")
 install.packages("lubridate",type="binary")
 ```
 
@@ -13,12 +15,20 @@ install.packages("lubridate",type="binary")
 library(tidyverse)
 library(readr)
 library(tm)
+library(dplyr)
+library(sqldf)
 #library(SnowballC)
 library(wordcloud)
 library(RColorBrewer)
 df <- read.csv("data_analyst.csv")
 ```
-#clean the data
+
+# View initial dataset
+```{r}
+head(df)
+```
+
+# clean the data
 ```{r}
 #remove the first column
 df$x<-NULL
@@ -57,10 +67,16 @@ df
   
 clean_df$Salary.Estimate<-NULL
 ##clean_df <- na.omit(clean_df)
-clean_df
+
 
 ```
-#Top 20 Roles with their minimum and maximum salaries
+# View cleaned dataframe
+```{r}
+#head(clean_df)
+clean_df
+```
+
+# Top 20 Roles with their minimum and maximum salaries
 ```{r}
 data<-data.frame(clean_df$Job.Title,clean_df$Max_Salary,clean_df$Min_Salary,clean_df$Avg_Salary)
 data
@@ -68,6 +84,7 @@ names(data)[1] <- "Job.Title"
 names(data)[2] <- "Max_Salary"
 names(data)[3] <- "Min_Salary"
 names(data)[4] <- "Avg_Salary"
+
 
 data <- data[order(-data$Avg_Salary),]
 
@@ -124,7 +141,7 @@ q
 
 ```
 
-
+# Wordcloud
 ```{r}
 jobDescription <- clean_df$Job.Description
 #textDA <-tail(jobDescription,500)
@@ -160,3 +177,52 @@ wordcloud(words = d$word, freq = d$freq, min.freq = 10,
           max.words=320, random.order=FALSE, rot.per=0.25, 
           colors=brewer.pal(8, "Dark2"))
 ```
+
+# Showing job listings by location
+```{r}
+
+
+location_counts <- clean_df %>% count(Location) #using dplyr count to count how many jobs in each location
+location_counts 
+
+split_counts <- location_counts %>% separate(Location, c("City", "State"), extra = "drop", fill = "right", sep = ",")
+split_counts # separated into city and state
+
+split_counts <- (split_counts %>% add_column(lat = 0.0, .after = 3))
+split_counts <- (split_counts %>% add_column(lng = 0.0, .after = 4))
+split_counts
+
+#known errors: City of Industry, CA; DC Ranch, AZ; Far Rockaway, NY
+```
+
+```{r}
+#data courtesy of https://simplemaps.com/data/us-cities
+us_cities_data <- read.csv("uscities.csv")
+head(us_cities_data)
+```
+
+```{r}
+f <- function(x, output) {
+  city <- x[1]
+  state <- x[2]
+  state <- sub('.', '', state)
+  print(x)
+  selection <- fn$sqldf("SELECT * FROM us_cities_data WHERE us_cities_data.city='$city' AND us_cities_data.state_id='$state' ")
+  
+  if(dim(selection)[1] != 0) {
+    #print("success!")
+    print(selection$lat)#x[4] <- selection$lat
+    #x[5] <- selection$lng
+  }
+  else {
+    sprintf("INVALID CITY ERROR, CITY NAME: %s, %s", city, state)
+  } #33 errors - look these up manually, or ignore
+}
+
+
+apply(split_counts, 1, f)
+split_counts
+```
+
+
+
