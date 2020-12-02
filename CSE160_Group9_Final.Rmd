@@ -1,0 +1,207 @@
+---
+title: CSE160_FinalProject_Melody
+output: html_notebook
+---
+
+Run this block if you need to install these required packages.
+```{r}
+install.packages("janitor")
+install.packages("dplyr")
+install.packages("sqldf")
+install.packages("lubridate",type="binary")
+```
+
+```{r}
+library(tidyverse)
+library(readr)
+library(tm)
+library(dplyr)
+library(sqldf)
+#library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+df <- read.csv("~/Desktop/DataAnalyst.csv")
+```
+
+# View initial dataset
+```{r}
+head(df)
+```
+
+# clean the data
+```{r}
+#remove the first column
+df$x<-NULL
+df
+#change -1 to NA
+  clean_df <- 
+  df %>% 
+  transmute(
+    Job.Title, 
+    Salary.Estimate,
+    Job.Description,
+    Rating = case_when(Rating != -1 ~ as.numeric(Rating), TRUE ~ NA_real_),
+    Company.Name,
+    Location,
+    Headquarters= case_when(Headquarters != "-1" ~ as.character(Headquarters), TRUE ~ NA_character_), 
+    Size= case_when(Size != "-1" ~ as.character(Size), TRUE ~ NA_character_), 
+    Founded = case_when(Founded != -1 ~ as.numeric(Founded), TRUE ~ NA_real_),
+    Type.of.ownership= case_when( Type.of.ownership != "-1" ~ as.character( Type.of.ownership), TRUE ~ NA_character_),
+    Industry = case_when(Industry != "-1" ~ as.character(Industry), TRUE ~ NA_character_), 
+    Sector = case_when(Sector != "-1" ~ as.character(Sector), TRUE ~ NA_character_),
+    Revenue= case_when(Revenue != "-1" ~ as.character(Revenue), TRUE ~ NA_character_),
+    Competitors= case_when(Competitors != "-1" ~ as.character(Competitors), TRUE ~ NA_character_),
+    Easy.Apply= case_when(Easy.Apply != "-1" ~ as.character(Easy.Apply), TRUE ~ NA_character_),
+    Min_Salary = str_extract(Salary.Estimate, 
+                                     pattern = "[:digit:]{1,3}"), 
+    Min_Salary = as.numeric(Min_Salary) * 1, 
+    
+    Max_Salary = str_extract(Salary.Estimate, 
+                                     pattern = "([:digit:]{1,3})(?=K \\(G)"), 
+    Max_Salary = as.numeric(Max_Salary) * 1, 
+      
+    Avg_Salary = (Min_Salary + Max_Salary) / 2
+    
+    )
+  
+clean_df$Salary.Estimate<-NULL
+##clean_df <- na.omit(clean_df)
+```
+# View cleaned dataframe
+```{r}
+#head(clean_df)
+clean_df
+```
+#Logistic regression
+```{r}
+clean_df$IsSalary <- ifelse(clean_df$Max_Salary > "80", 1, 0)
+clean_df$IsRating <- ifelse(clean_df$Rating > "3.5", 1, 0)
+clean_df$IsFounded <- ifelse(clean_df$Founded < "1995", 1, 0)
+clean_df$IsSector <- ifelse(clean_df$Sector == "Business Services" , 1, 0)
+clean_df$IsPrivate <- ifelse(clean_df$Type.of.ownership == "Company - Private" , 1, 0)
+clean_df$IsPublic <- ifelse(clean_df$Type.of.ownership == "Company - Public" , 1, 0)
+clean_df$IsNY <- ifelse(clean_df$Location == "New York, NY" , 1, 0)
+
+g1 <- glm(IsSalary ~ IsRating  + IsFounded + IsSector + IsPrivate + IsPublic + IsNY, data = clean_df,
+          family = binomial(link="logit")) 
+summary(g1)
+exp(g1$coefficients)
+```
+
+# Top 20 Roles with their minimum and maximum salaries
+```{r}
+data<-data.frame(clean_df$Job.Title,clean_df$Max_Salary,clean_df$Min_Salary,clean_df$Avg_Salary)
+data
+names(data)[1] <- "Job.Title"
+names(data)[2] <- "Max_Salary"
+names(data)[3] <- "Min_Salary"
+names(data)[4] <- "Avg_Salary"
+data <- data[order(-data$Avg_Salary),]
+data<-distinct(data,data$Job.Title, .keep_all= TRUE)
+data1<-head(data,n=20)
+data1$`data$Job.Title`=NULL
+data1$Avg_Salary=NULL
+data1
+df2 <- rbind(
+        data.frame(data1$Job.Title, "val" = data1$Max_Salary, "type"="max_salary"),
+        data.frame(data1$Job.Title, "val" = data1$Min_Salary, "type"="min_salary")
+)
+t<-ggplot(df2, aes(x=data1.Job.Title, y=val, fill=type)) + geom_bar(position="stack", stat="identity")
+t<-t+theme(
+        #axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+t<-t + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+t
+```
+
+
+
+#Size of Employees Vs No of Companies
+
+```{r}
+df1<-count(clean_df,Size,sort=TRUE)
+df1
+df1<data.frame(df1)
+df1$employee_size<-df1$Size
+df1$Size<-NULL
+names(df1)[names(df1)=="n"] <- "No_of_companies"
+df1<-add_column(df1, ID= seq.int(nrow(df1))-1, .after = 0)
+names(df1)[1] <- ""
+df1<-na.omit(df1)
+df1
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+p<-ggplot(data=df1, aes(x=reorder(employee_size,-No_of_companies), y=No_of_companies,fill=employee_size)) +
+  geom_bar(stat="identity") + scale_fill_hue()+xlab("Size of Employees")+ylab("Number of companies")
+q<-p+theme(
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+q
+```
+
+# Wordcloud
+```{r}
+jobDescription <- clean_df$Job.Description
+#textDA <-tail(jobDescription,500)
+corpusDA <- Corpus(VectorSource(jobDescription))
+# load the data as a corpus
+#get rid of some characters, punctuations, or stop words that don’t add to our insights and thus remove these characters or words from the corpus.
+corpusDA <- tm_map(corpusDA, content_transformer(tolower))
+corpusDA <- tm_map(corpusDA, removeNumbers)
+corpusDA <- tm_map(corpusDA, removePunctuation)
+corpusDA <- tm_map(corpusDA, removeWords, stopwords("english"))
+#remove any words that do not add insights
+corpusDA <- tm_map(corpusDA, removeWords, c("the", "and", "some", "to", "is", "was", "but","using","work","new","job","will","can","help","best","get","able","learn","hoc","idate","one","make","next","true","like","roles","build","large","top","years","hill","big","world","need","also","team","play","better","game","games","teams","must","high","role","roles","join","group","ibotta","well","uel","color","life","use","ing")) 
+toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+corpusDA <- tm_map(corpusDA, toSpace, "the")
+corpusDA <- tm_map(corpusDA, toSpace, "and")
+corpusDA <- tm_map(corpusDA, toSpace, "\\|")
+corpusDA <- tm_map(corpusDA, stripWhitespace)
+#This is the word cloud for Data Analytics
+abc <- TermDocumentMatrix(corpusDA)
+m <- as.matrix(abc)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 30)
+#tail(d,20)
+#View(v)
+#set.seed(1234)
+#plot the graph
+wordcloud(words = d$word, freq = d$freq, min.freq = 10,
+          max.words=320, random.order=FALSE, rot.per=0.25, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+# Showing job listings by location
+```{r}
+location_counts <- clean_df %>% count(Location) #using dplyr count to count how many jobs in each location
+location_counts 
+split_counts <- location_counts %>% separate(Location, c("City", "State"), extra = "drop", fill = "right", sep = ",")
+split_counts # separated into city and state
+split_counts <- (split_counts %>% add_column(lat = 0.0, .after = 3))
+split_counts <- (split_counts %>% add_column(lng = 0.0, .after = 4))
+split_counts
+#known errors: City of Industry, CA; DC Ranch, AZ; Far Rockaway, NY
+
+#data courtesy of https://simplemaps.com/data/us-cities
+us_cities_data <- read.csv("~/Desktop/uscities.csv")
+head(us_cities_data)
+
+f <- function(x, output) {
+  city <- x[1]
+  state <- x[2]
+  state <- sub('.', '', state)
+  print(x)
+  selection <- fn$sqldf("SELECT * FROM us_cities_data WHERE us_cities_data.city='$city' AND us_cities_data.state_id='$state' ")
+  
+  if(dim(selection)[1] != 0) {
+    #print("success!")
+    print(selection$lat)#x[4] <- selection$lat
+    #x[5] <- selection$lng
+  }
+  else {
+    sprintf("INVALID CITY ERROR, CITY NAME: %s, %s", city, state)
+  } #33 errors - look these up manually, or ignore
+}
+apply(split_counts, 1, f)
+split_counts
+```
