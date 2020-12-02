@@ -2,22 +2,6 @@ Link for Trello:
 
 [https://trello.com/b/5ZPhJJkg/gp](https://trello.com/b/5ZPhJJkg/gp)
 
-Google Drive for data set: [https://drive.google.com/file/d/127c2HbpoHSd89uZj4-AikygG3s5hefL8/view?usp=sharing](https://drive.google.com/file/d/127c2HbpoHSd89uZj4-AikygG3s5hefL8/view?usp=sharing)
-
-Link for yode&#39;s R code: [https://drive.google.com/file/d/1cr35WYeT-0CI18yMOD5Mw60vVezPkqkr/view?usp=sharing](https://drive.google.com/file/d/1cr35WYeT-0CI18yMOD5Mw60vVezPkqkr/view?usp=sharing)
-
-**Link for updated and combined code(including data cleaning, 2 visualization plots, wordcloud):**
-
-[https://drive.google.com/file/d/1MI8\_HJ-CTH8WXPsyOA02-aTts4pU\_ub2/view?usp=sharing](https://drive.google.com/file/d/1MI8_HJ-CTH8WXPsyOA02-aTts4pU_ub2/view?usp=sharing)
-
-Kelsey&#39;s
-
-[https://drive.google.com/file/d/1PcADUivemsswR2ukOlbBGHZ1UNuExAG0/view?usp=sharing](https://drive.google.com/file/d/1PcADUivemsswR2ukOlbBGHZ1UNuExAG0/view?usp=sharing)
-
-Shared google drive for R code:
-
-[https://drive.google.com/drive/u/1/folders/0AM3HB-MmpiWjUk9PVA](https://drive.google.com/drive/u/1/folders/0AM3HB-MmpiWjUk9PVA)
-
 **Team members:** Group 9: Hoa Bui, Andrew Johnson, Yuhan(Melody) Su, Jiaqiang Yuan
 
 **Title of our team project:** Factors that Affect the Salary of Data Analysts&#39; job.
