@@ -141,7 +141,6 @@ q<-p+theme(
 q
 
 ```
-
 # Wordcloud
 ```{r}
 jobDescription <- clean_df$Job.Description
@@ -153,29 +152,25 @@ corpusDA <- tm_map(corpusDA, content_transformer(tolower))
 corpusDA <- tm_map(corpusDA, removeNumbers)
 corpusDA <- tm_map(corpusDA, removePunctuation)
 corpusDA <- tm_map(corpusDA, removeWords, stopwords("english"))
-
 #remove any words that do not add insights
-corpusDA <- tm_map(corpusDA, removeWords, c("the", "and", "some", "to", "is", "was", "but","using","work","new","job","will","can","help","best","get","able","learn","hoc","idate","one","make","next","true","like","roles","build","large","top","years","hill","big","world","need","also","team","play","better","game","games","teams","must","high","role","roles","join","group","ibotta","well","uel","color","life","use","ing")) 
-
+corpusDA <- tm_map(corpusDA, removeWords, c("ing","the", "and", "some", "to", "is", "was", "but","using","work","new","job","will","can","help","best","get","able","learn","hoc","idate","one","make","next","true","like","roles","build","large","top","years","hill","big","world","ing","need","also","team","play","better","game",".","games","teams","must","high","role","roles","join","group","ibotta","well","uel","color","life","use","ing")) 
 toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
 corpusDA <- tm_map(corpusDA, toSpace, "the")
 corpusDA <- tm_map(corpusDA, toSpace, "and")
 corpusDA <- tm_map(corpusDA, toSpace, "\\|")
-
 corpusDA <- tm_map(corpusDA, stripWhitespace)
-
 #This is the word cloud for Data Analytics
 abc <- TermDocumentMatrix(corpusDA)
 m <- as.matrix(abc)
 v <- sort(rowSums(m),decreasing=TRUE)
 d <- data.frame(word = names(v),freq=v)
-head(d, 30)
+head(d, 50)
 #tail(d,20)
 #View(v)
 #set.seed(1234)
 #plot the graph
 wordcloud(words = d$word, freq = d$freq, min.freq = 10,
-          max.words=320, random.order=FALSE, rot.per=0.25, 
+          max.words=350, random.order=FALSE, rot.per=0.25, 
           colors=brewer.pal(8, "Dark2"))
 ```
 
@@ -220,10 +215,9 @@ for(i in 1:nrow(split_counts)){
     print(state)
   } #33 errors - look these up manually, or ignore
 }
-```
 
 # Clean the split_counts
-```{r}
+
 clean_counts <- subset(split_counts, lat != 0.0000) # remove cities that could not be found
 clean_counts
 
@@ -235,10 +229,7 @@ for(i in 1:nrow(clean_counts)){
     cleaner_counts <- rbind(cleaner_counts, clean_counts[i,])
   }
 }
-```
-
-
-```{r}
+ 
 library(ggplot2);library(maps);
 #states <- map_data("state")
 
@@ -254,9 +245,7 @@ gradient_plot <- function(df)
   ggtitle("Job Location Heatmap")
 
 }
-```
-
-```{r}
+ 
 # simple point plot based on frequency
 point_plot <- function(df)
 {
@@ -268,13 +257,27 @@ point_plot <- function(df)
   ggtitle("Job Location Point Plot")
 
 }
-```
 
 # Generate the maps
-```{r}
+
 gradient_plot(cleaner_counts)
 point_plot(clean_counts)
 
+```
+
+
+#SQL
+```{r}
+names(clean_df)[names(clean_df) == "Company.Name"] <- "companyName"
+
+sqldf("SELECT distinct(companyName)
+      FROM clean_df
+      WHERE Location == 'New York, NY' AND Sector == 'Business Services' AND Rating > 4.5")
+
+sqldf("SELECT distinct(companyName)
+      FROM clean_df
+      ORDER BY Rating DESC
+      LIMIT 20 OFFSET 20")
 ```
 
 
