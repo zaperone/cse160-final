@@ -76,7 +76,75 @@ clean_df$Salary.Estimate<-NULL
 #head(clean_df)
 clean_df
 ```
+```{r}
+#CLustering between Salary and Cities, Salary and Rating, Salary and Industry
+install.packages("ggplot2")
+```
+```{r}
+library("ggplot2")
+library(tm)
+library(tidyverse)
+library(readr)
+```
 
+
+```{r}
+df = read.csv("/Users/HoaBui/Documents/Lehigh works/Fall 2020/CSE 160/DataAnalyst.csv")
+df
+```
+
+```{r}
+#remove the first column
+df$x<-NULL
+df
+```
+
+
+
+```{r}
+install.packages("tidyr")
+```
+```{r}
+#library(dplyr)
+```
+
+```{r}
+p1 <- ggplot(clean_df, aes(x=Min_Salary)) + geom_histogram(stat = "count", width=1, fill="#69b3a2", color="#e9ecef", alpha=0.9) + ggtitle("Minimum Salary Distribution") 
+p2 <- ggplot(clean_df, aes(x=Max_Salary)) + geom_histogram(stat = "count", width=1, fill="#69b3a2", color="#e9ecef", alpha=0.9) + ggtitle("Maximum Salary Distribution")
+p1
+p2
+
+
+```
+```{r}
+#Top 20 average maximum salary with their minimum
+#Bottom 10 average minimum salary with their maximum
+
+new_city_max <- aggregate( Max_Salary~ Location, data= clean_df, FUN=mean)
+new_city_min <- aggregate(Min_Salary ~ Location, data= clean_df, FUN=mean)
+
+data <- data.frame(new_city_max$Location, new_city_max$Max_Salary, new_city_min$Min_Salary)
+names(data)[1] <- "Location"
+names(data)[2] <- "Max_Salary"
+names(data)[3] <- "Min_Salary"
+data$average <- rowMeans(subset(data, select = c("Max_Salary", "Min_Salary")), na.rm = TRUE)
+
+data
+
+data <- data[order(-data$average),]
+data <- data[1:20,]
+data
+df2 <- rbind(
+        data.frame(data$Location, "val" = data$Max_Salary, "type"="max_salary"),
+        data.frame(data$Location, "val" = data$Min_Salary, "type"="min_salary")
+)
+
+df2
+
+
+ggplot(df2, aes(x=data.Location, y=val, fill=type)) + geom_bar(position="stack", stat="identity")
+
+```
 # Top 20 Roles with their minimum and maximum salaries
 ```{r}
 data<-data.frame(clean_df$Job.Title,clean_df$Max_Salary,clean_df$Min_Salary,clean_df$Avg_Salary)
@@ -110,6 +178,14 @@ t<-t + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 t
 ```
 
+```{r}
+#Sectors vs Average Salary
+
+#Clean Data in Revenue
+group_by_sectors <- aggregate(Avg_Salary ~ Sector, data = clean_df, FUN = mean)
+group_by_sectors <- group_by_sectors[order(-group_by_sectors$Avg_Salary),]
+group_by_sectors
+```
 
 
 
