@@ -1,5 +1,5 @@
 ---
-title: CSE160_FinalProject_Melody
+title: CSE160_FinalProject_Group 9
 output: html_notebook
 ---
 
@@ -10,6 +10,8 @@ install.packages("dplyr")
 install.packages("sqldf")
 install.packages("maps")
 install.packages("lubridate",type="binary")
+install.packages("tidyr")
+install.packages("ggplot2")
 ```
 
 ```{r}
@@ -21,6 +23,8 @@ library(sqldf)
 #library(SnowballC)
 library(wordcloud)
 library(RColorBrewer)
+library("ggplot2")
+
 df <- read.csv("data_analyst.csv")
 ```
 
@@ -68,29 +72,11 @@ df
   
 clean_df$Salary.Estimate<-NULL
 ##clean_df <- na.omit(clean_df)
-
-
 ```
 # View cleaned dataframe
 ```{r}
 #head(clean_df)
 clean_df
-```
-```{r}
-#CLustering between Salary and Cities, Salary and Rating, Salary and Industry
-install.packages("ggplot2")
-```
-```{r}
-library("ggplot2")
-library(tm)
-library(tidyverse)
-library(readr)
-```
-
-
-```{r}
-df = read.csv("/Users/HoaBui/Documents/Lehigh works/Fall 2020/CSE 160/DataAnalyst.csv")
-df
 ```
 
 ```{r}
@@ -100,23 +86,14 @@ df
 ```
 
 
-
-```{r}
-install.packages("tidyr")
-```
-```{r}
-#library(dplyr)
-```
-
 ```{r}
 #Minimum and Maximum Distribution
 p1 <- ggplot(clean_df, aes(x=Min_Salary)) + geom_histogram(stat = "count", width=1, fill="#69b3a2", color="#e9ecef", alpha=0.9) + ggtitle("Minimum Salary Distribution") 
 p2 <- ggplot(clean_df, aes(x=Max_Salary)) + geom_histogram(stat = "count", width=1, fill="#69b3a2", color="#e9ecef", alpha=0.9) + ggtitle("Maximum Salary Distribution")
 p1
 p2
-
-
 ```
+
 ```{r}
 #Top 20 average maximum salary with their minimum
 #Bottom 10 average minimum salary with their maximum
