@@ -109,6 +109,7 @@ install.packages("tidyr")
 ```
 
 ```{r}
+#Minimum and Maximum Distribution
 p1 <- ggplot(clean_df, aes(x=Min_Salary)) + geom_histogram(stat = "count", width=1, fill="#69b3a2", color="#e9ecef", alpha=0.9) + ggtitle("Minimum Salary Distribution") 
 p2 <- ggplot(clean_df, aes(x=Max_Salary)) + geom_histogram(stat = "count", width=1, fill="#69b3a2", color="#e9ecef", alpha=0.9) + ggtitle("Maximum Salary Distribution")
 p1
@@ -142,8 +143,13 @@ df2 <- rbind(
 df2
 
 
-ggplot(df2, aes(x=data.Location, y=val, fill=type)) + geom_bar(position="stack", stat="identity")
+t<-ggplot(df2, aes(x=data.Location, y=val, fill=type)) + geom_bar(position="stack", stat="identity")
 
+t<-t+theme(
+        #axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+t<-t + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+t
 ```
 # Top 20 Roles with their minimum and maximum salaries
 ```{r}
